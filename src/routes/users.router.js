@@ -1,18 +1,48 @@
 import express from "express";
 import {prisma} from '../utils/prisma/index.js'
+import Joi from 'joi';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import authMiddleware from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
+const signUpSchema = Joi.object({
+    nickname : Joi.string().min(3).max(15).alphanum().required(), // alphanum(): 알파벳과 숫자만 허용
+    password: Joi.string()
+    .min(8)
+    .max(20)
+    .pattern(new RegExp(`^(?!.*\\b${Joi.ref('nickname')}\\b).{8,20}$`))
+    .required(),
+    userType: Joi.string().valid('CUSTOMER', 'OWNER').default('CUSTOMER') // CUSTOMER' 또는 'OWNER' 중 하나여야 함
+})
 
 // 1. 회원가입 API
 router.post('/sign-up', async(req, res, next)=>{
-    const {nickname, password, userType} = req.body;
+    try {
+        const{error, value} = signUpSchema.validate(req.body,  { abortEarly: true });
+        
+        if (error) {
+            // 닉네임과 비밀번호에 대한 오류 메시지 확인
+            const nicknameError = error.details.find(d => d.context.key === 'nickname');
+            const passwordError = error.details.find(d => d.context.key === 'password');
+
+            // 오류에 따른 응답 반환
+            if (nicknameError) {
+                return res.status(400).json({ message: '닉네임 형식에 일치하지 않습니다.' });
+            } else if (passwordError) {
+                return res.status(400).json({ message: '비밀번호 형식에 일치하지 않습니다.' });
+            } else {
+                // 다른 오류에 대한 처리
+                return res.status(400).json({ message: '요청이 잘못되었습니다.' });
+            }
+        }
+
+        // 유효성 검사를 통과한 데이터를 추출하여 사용
+        const { nickname, password, userType } = value;
+    
     if(!nickname || !password) return res.status(400).json({errorMessage : '데이터 형식이 올바르지 않습니다'});
-    //  닉네임 형식 일치 않는 경우 에러if 추가
-    // 비밀번호 형식 일치 않는 경우 400 에러 
+
     const userNickname = await prisma.users.findFirst({
         where : {nickname}
     });
@@ -29,6 +59,9 @@ await prisma.users.create({
 });
 
     return res.status(201).json({message : '회원가입이 완료되었습니다'})
+}catch (error) {
+        return res.status(500).json({ errorMessage: '서버 오류입니다' });
+    }
 });
 
 
@@ -57,6 +90,8 @@ return res.status(401).json({ message: "비밀번호가 일치하지 않습니�
     res.cookie('authorization', `Bearer ${token}`);
     return res.status(200).json({message :'로그인에 성공하였습니다'})
 });
+
+
 // 3. 카테고리 등록 API
 router.post('/categories', authMiddleware, async(req, res, next)=>{
     const {name} = req.body;
@@ -64,9 +99,11 @@ router.post('/categories', authMiddleware, async(req, res, next)=>{
 
     if(!name) return res.status(400).json({message : '데이터 형식이 올바르지 않습니다.'});
     
+    // 로그인 되어있지 않은 경우 >>auth.middleware.js 에서 이미 처리 
+    
     // 만약 사용자의 역할이 사장님(OWNER)이 아니면 권한이 없음을 알림
     if (role !== 'OWNER') {
-        return res.status(403).json({ message: '카테고리를 등록할 권한이 없습니다.' });
+        return res.status(403).json({ message: '사장님만 사용할 수 있는 API입니다' });
     }
 
     // 카테고리 순서를 정의하기 위해 현재 카테고리 개수를 가져옴

@@ -7,7 +7,7 @@ export default async function (req, res, next) {
         const {authorization} = req.cookies;
         // 쿠키가 존재하지 않으면, 인증된 사용자가 아니다
         if(!authorization) 
-        throw new Error('요청한 사용자의 토큰이 존재하지 않습니다.');
+        throw new Error('로그인이 필요한 서비스입니다');
         // 2.쿠키가 Bearer  형식인지 확인
         const [tokenType, token] = authorization.split(" ");
         // 만약 토큰 타입이 Bearer 가 아닐때 오류
