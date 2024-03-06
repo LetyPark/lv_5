@@ -1,6 +1,5 @@
 ## 회원가입 / 로그인 기능을 포함한 식당 주문 백엔드 서버 만들기
 
-
 ## 기술 스택:
 
 - **Express.js** : 웹 애플리케이션의 서버 사이드 로직을 구현을 위해 사용
@@ -15,8 +14,9 @@
 
 ## 기타:
 - **Access Token 및 Refresh Token** : 사용자 인증 및 토큰 기반 인증
----
+
 ### ERD
+
 
 ![캡처](https://github.com/LetyPark/lv4_private/assets/141550557/cc365850-dcc2-4b4c-8d12-ab96eb28bc09)
 
