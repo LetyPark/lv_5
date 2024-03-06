@@ -5,7 +5,7 @@ export default async function (req, res, next) {
     try {
         // 1. 클라이언트로부터 쿠키를 전달받는다
         const { authorization } = req.cookies;
-        // 쿠키가 존재하지 않으면, 인증된 사용자가 아니다
+        // 쿠키가 존재하지 않으면, 인증된 사용자가 아님
         if (!authorization)
             throw new Error('로그인이 필요한 서비스입니다');
         // 2. 쿠키가 Bearer 형식인지 확인
@@ -57,13 +57,13 @@ export default async function (req, res, next) {
         next();
 
     } catch (error) {
-        // 여기서 옵션으로 세부 에러 설정
+        // 옵션으로 세부 에러 설정
         if (error.name === "TokenExpiredError")
             return res.status(400).json({ Message: '토큰이 만료되었습니다' });
         if (error.name === 'JsonWebTokenError')
             return res.status(401).json({ message: '토큰이 조작되었습니다.' })
 
-        // 맨막줄은 모두 아닐때 거의 디폴트 같은 늑김
+        // 모두 아닐때 디폴트.. 
         return res.status(400).json({ message: error.message });
     }
 }

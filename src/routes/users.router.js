@@ -67,38 +67,36 @@ await prisma.users.create({
 
 // 2. 로그인 API
 router.post('/sign-in', async(req, res, next)=>{
-    try{
+try{
     const {nickname, password} = req.body;
+
     if(!nickname || !password) return res.status(400).json({errorMessage : '데이터 형식이 올바르지 않습니다'});
 
 // 존재하지 않는 닉네임일 경우 
-const user = await prisma.users.findFirst({
+    const user = await prisma.users.findFirst({
     where : {nickname}
-});
-if(!user) return res.status(401).json({message : '존재하지 않는 닉네임입니다.'});
-
+    });
+    if(!user) return res.status(401).json({message : '존재하지 않는 닉네임입니다.'});
 
 // 비정상적인 비밀번호로 시도할 경우 
-if (!(await bcrypt.compare(password, user.password)))
-return res.status(401).json({ message: "비밀번호가 일치하지 않습니다" });
-
+    if (!(await bcrypt.compare(password, user.password)))
+        return res.status(401).json({ message: "비밀번호가 일치하지 않습니다" });
 
     // 로그인에 성공한다면 jwt 토큰 발급
     const role = user.userType === 'OWNER' ? 'OWNER' : 'CUSTOMER'; // 사용자의 역할에 따라 역할 정보 설정
     
   // 액세스 토큰 발급
-  const accessToken = jwt.sign({ id: user.id, role }, "custom-secret-key", { expiresIn: '50m' }); // 15분 유효시간
+    const accessToken = jwt.sign({ id: user.id, role }, "custom-secret-key", { expiresIn: '50m' }); // 15분 유효시간
   // 리프레시 토큰 발급
-  const refreshToken = jwt.sign({ id: user.id, role }, "custom-refresh-secret-key", { expiresIn: '1d' }); // 7일 유효시간
+    const refreshToken = jwt.sign({ id: user.id, role }, "custom-refresh-secret-key", { expiresIn: '1d' }); // 7일 유효시간
 
   // 클라이언트에게 토큰을 쿠키로 전송
-  res.cookie('authorization', `Bearer ${accessToken}`);
-  res.cookie('refreshToken', `Bearer ${refreshToken}`);
+    res.cookie('authorization', `Bearer ${accessToken}`);
+    res.cookie('refreshToken', `Bearer ${refreshToken}`);
 
-  return res.status(200).json({ message: '로그인에 성공하였습니다' });
-} catch (error) {
-    // 사용자 인증 미들웨어로 에러 전달
-    return next(error);
+     return res.status(200).json({ message: '로그인에 성공하였습니다' });
+    } catch (error) {
+      return next(error);
 }
 });
 
