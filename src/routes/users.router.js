@@ -3,7 +3,6 @@ import {prisma} from '../utils/prisma/index.js'
 import Joi from 'joi';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import authMiddleware from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
@@ -81,45 +80,21 @@ if(!user) return res.status(401).json({message : '존재하지 않는 닉네임�
 if (!(await bcrypt.compare(password, user.password)))
 return res.status(401).json({ message: "비밀번호가 일치하지 않습니다" });
 
+
     // 로그인에 성공한다면 jwt 토큰 발급
     const role = user.userType === 'OWNER' ? 'OWNER' : 'CUSTOMER'; // 사용자의 역할에 따라 역할 정보 설정
+    
+  // 액세스 토큰 발급
+  const accessToken = jwt.sign({ id: user.id, role }, "custom-secret-key", { expiresIn: '15m' }); // 15분 유효시간
+  // 리프레시 토큰 발급
+  const refreshToken = jwt.sign({ id: user.id, role }, "custom-refresh-secret-key", { expiresIn: '1d' }); // 7일 유효시간
 
-    const token = jwt.sign({ id: user.id, role }, "custom-secret-key");
+  // 클라이언트에게 토큰을 쿠키로 전송
+  res.cookie('authorization', `Bearer ${accessToken}`);
+  res.cookie('refreshToken', `Bearer ${refreshToken}`);
 
-    // 클라이언트에게 토큰을 쿠키로 전송
-    res.cookie('authorization', `Bearer ${token}`);
-    return res.status(200).json({message :'로그인에 성공하였습니다'})
+  return res.status(200).json({ message: '로그인에 성공하였습니다' });
 });
-
-
-// 3. 카테고리 등록 API
-router.post('/categories', authMiddleware, async(req, res, next)=>{
-    const {name} = req.body;
-    const { role } = req.user; // 사용자의 역할 정보
-
-    if(!name) return res.status(400).json({message : '데이터 형식이 올바르지 않습니다.'});
-    
-    // 로그인 되어있지 않은 경우 >>auth.middleware.js 에서 이미 처리 
-    
-    // 만약 사용자의 역할이 사장님(OWNER)이 아니면 권한이 없음을 알림
-    if (role !== 'OWNER') {
-        return res.status(403).json({ message: '사장님만 사용할 수 있는 API입니다' });
-    }
-
-    // 카테고리 순서를 정의하기 위해 현재 카테고리 개수를 가져옴
-    const categoryCount = await prisma.categories.count();
-
-    await prisma.categories.create({
-        data : {
-            name,
-            // 새로운 카테고리의 순서를 현재 카테고리 개수보다 1 큰 값으로 설정
-            order: categoryCount + 1
-        }
-    });
-    
-    return res.status(201).json({message : '카테고리를 등록하였습니다.'});
-});
-
 
 export default router;
 

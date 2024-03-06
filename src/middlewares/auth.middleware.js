@@ -1,21 +1,40 @@
 import jwt from 'jsonwebtoken';
-import {prisma} from '../utils/prisma/index.js';
+import { prisma } from '../utils/prisma/index.js';
 
 export default async function (req, res, next) {
     try {
-        // 1. 클라이언트로 부터 쿠키를 전달받는다
-        const {authorization} = req.cookies;
+        // 1. 클라이언트로부터 쿠키를 전달받는다
+        const { authorization } = req.cookies;
         // 쿠키가 존재하지 않으면, 인증된 사용자가 아니다
-        if(!authorization) 
-        throw new Error('로그인이 필요한 서비스입니다');
-        // 2.쿠키가 Bearer  형식인지 확인
+        if (!authorization)
+            throw new Error('로그인이 필요한 서비스입니다');
+        // 2. 쿠키가 Bearer 형식인지 확인
         const [tokenType, token] = authorization.split(" ");
-        // 만약 토큰 타입이 Bearer 가 아닐때 오류
-        if(tokenType !=='Bearer') 
-        throw new Error('토큰 타입이 Bearer 형식이 아닙니다');
+        // 만약 토큰 타입이 Bearer가 아닐때 오류
+        if (tokenType !== 'Bearer')
+            throw new Error('토큰 타입이 Bearer 형식이 아닙니다');
 
-        // JWT를 사용하여 서버에서 발급한 토큰이 유효한지 검증
-        const decodedToken = jwt.verify(token, "custom-secret-key");
+        let decodedToken;
+        try {
+            // JWT를 사용하여 서버에서 발급한 토큰이 유효한지 검증
+            decodedToken = jwt.verify(token, "custom-secret-key");
+        } catch (error) {
+            // 토큰이 만료된 경우
+            if (error.name === "TokenExpiredError") {
+                // 리프레시 토큰 검증
+                const refreshToken = req.cookies.refreshToken;
+                const decodedRefreshToken = jwt.verify(refreshToken, "custom-refresh-secret-key");
+
+                // 새로운 액세스 토큰 발급
+                const newAccessToken = jwt.sign({ id: decodedRefreshToken.id, role: decodedRefreshToken.role }, "custom-secret-key", { expiresIn: '1d' });
+
+                // 클라이언트에게 새로운 액세스 토큰을 전달
+                res.cookie('authorization', `Bearer ${newAccessToken}`);
+                return next(); // 다음 미들웨어로 진행
+            } else {
+                throw error; // 다른 JWT 에러는 그대로 throw
+            }
+        }
 
         // JWT의 userId를 사용하여 사용자 조회
         const userId = decodedToken.id;
@@ -35,21 +54,16 @@ export default async function (req, res, next) {
         // req.user에 역할 정보 할당
         req.user.role = role;
 
-        // 5. req.user에 조회된 사용자 정보 할당 
-        req.user = user;
-
         next();
 
-    }catch (error) {
-        // 여기서 옵션으로 세부 에러 설정을 할수 있음
+    } catch (error) {
+        // 여기서 옵션으로 세부 에러 설정
         if (error.name === "TokenExpiredError")
-          return res.status(400).json({ Message: '토큰이 만료되었습니다' });
-    if(error.name === 'JsonWebTokenError') return res.status(401).json({message : '토큰이 조작되었습니다.'})
-    
-    // 맨막줄은 모두 아닐때 거의 디폴트 같은 늑김
-        return res.status(400).json({ message: error.message });
-      }
-    
-    }
+            return res.status(400).json({ Message: '토큰이 만료되었습니다' });
+        if (error.name === 'JsonWebTokenError')
+            return res.status(401).json({ message: '토큰이 조작되었습니다.' })
 
-// 
+        // 맨막줄은 모두 아닐때 거의 디폴트 같은 늑김
+        return res.status(400).json({ message: error.message });
+    }
+}
