@@ -17,16 +17,16 @@ export default async function (req, res, next) {
         let decodedToken;
         try {
             // JWT를 사용하여 서버에서 발급한 토큰이 유효한지 검증
-            decodedToken = jwt.verify(token, "custom-secret-key");
+            decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         } catch (error) {
             // 토큰이 만료된 경우
             if (error.name === "TokenExpiredError") {
                 // 리프레시 토큰 검증
                 const refreshToken = req.cookies.refreshToken;
-                const decodedRefreshToken = jwt.verify(refreshToken, "custom-refresh-secret-key");
+                const decodedRefreshToken = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
 
                 // 새로운 액세스 토큰 발급
-                const newAccessToken = jwt.sign({ id: decodedRefreshToken.id, role: decodedRefreshToken.role }, "custom-secret-key", { expiresIn: '1d' });
+                const newAccessToken = jwt.sign({ id: decodedRefreshToken.id, role: decodedRefreshToken.role }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1d' });
 
                 // 클라이언트에게 새로운 액세스 토큰을 전달
                 res.cookie('authorization', `Bearer ${newAccessToken}`);
@@ -53,17 +53,9 @@ export default async function (req, res, next) {
 
         // req.user에 역할 정보 할당
         req.user.role = role;
-
         next();
 
     } catch (error) {
-        // 옵션으로 세부 에러 설정
-        if (error.name === "TokenExpiredError")
-            return res.status(400).json({ Message: '토큰이 만료되었습니다' });
-        if (error.name === 'JsonWebTokenError')
-            return res.status(401).json({ message: '토큰이 조작되었습니다.' })
-
-        // 모두 아닐때 디폴트.. 
-        return res.status(400).json({ message: error.message });
+        next(error); 
     }
 }

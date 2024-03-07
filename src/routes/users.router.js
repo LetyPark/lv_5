@@ -64,6 +64,9 @@ await prisma.users.create({
 }
 });
 
+const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET; 
+const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET; 
+
 
 // 2. 로그인 API
 router.post('/sign-in', async(req, res, next)=>{
@@ -86,9 +89,9 @@ try{
     const role = user.userType === 'OWNER' ? 'OWNER' : 'CUSTOMER'; // 사용자의 역할에 따라 역할 정보 설정
     
   // 액세스 토큰 발급
-    const accessToken = jwt.sign({ id: user.id, role }, "custom-secret-key", { expiresIn: '50m' }); // 15분 유효시간
+    const accessToken = jwt.sign({ id: user.id, role }, accessTokenSecret, { expiresIn: '50m' }); // 15분 유효시간
   // 리프레시 토큰 발급
-    const refreshToken = jwt.sign({ id: user.id, role }, "custom-refresh-secret-key", { expiresIn: '1d' }); // 7일 유효시간
+    const refreshToken = jwt.sign({ id: user.id, role }, refreshTokenSecret, { expiresIn: '1d' }); // 7일 유효시간
 
   // 클라이언트에게 토큰을 쿠키로 전송
     res.cookie('authorization', `Bearer ${accessToken}`);

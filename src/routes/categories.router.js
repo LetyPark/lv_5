@@ -4,6 +4,11 @@ import authMiddleware from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
+function createError(message, name) {
+  const error = new Error(message);
+  error.name = name;
+  return error;
+}
 
 // 1. 카테고리 등록 API
 router.post('/categories', authMiddleware, async (req, res, next) => {
@@ -11,11 +16,14 @@ router.post('/categories', authMiddleware, async (req, res, next) => {
     const {name} = req.body;
     const {role} = req.user; // 사용자의 역할 정보
 
-    if (!name) return res.status(400).json({message: '데이터 형식이 올바르지 않습니다.'});
-    // 만약 사용자의 역할이 사장님(OWNER)이 아니면 권한이 없음
-    if (role !== 'OWNER') {
-        return res.status(403).json({message: '사장님만 사용할 수 있는 API입니다'});
-    }
+
+    if (!name) {
+      throw createError('Invalid Data Format', 'InvalidDataFormatError');
+  }
+
+  if (role !== 'OWNER') {
+    throw createError('Not owner', 'NotOwnerError');
+}
 
     const categoryCount = await prisma.categories.count();
         await prisma.categories.create({
@@ -53,20 +61,24 @@ router.patch("/categories/:categoryId",authMiddleware, async (req, res, next) =>
     try{
       const { categoryId } = req.params;
       const { name, order } = req.body;
-      const {role} = req.user; // 사용자의 역할 정보
-  
-    if (!categoryId || !name || !order)
-      return res.status(400).json({ message: "데이터 형식이 올바르지 않습니다" });
-    // 만약 사용자의 역할이 사장님(OWNER)이 아니면 권한이 없음
-    if (role !== 'OWNER') {
-        return res.status(403).json({message: '사장님만 사용할 수 있는 API입니다'});
+      const {role} = req.user;
+      
+    if (!categoryId || !name || !order) {
+      throw createError('Invalid DataFormat', 'InvalidDataFormatError');
     }
+
+    if (role !== 'OWNER') {
+      throw createError('Not owner', 'NotOwnerError');
+  }
+
     const category = await prisma.categories.findUnique({
       where: { id: +categoryId },
     });
-    if (!category)
-      return res.status(404).json({ message: "존재하지 않는 카테고리입니다" });
-  
+
+    if (!category){
+      throw createError('Category Not Found', 'CategoryNotFoundError');
+    }
+      
     await prisma.categories.update({
       where: { id: +categoryId },
       data: {
@@ -87,18 +99,22 @@ router.patch("/categories/:categoryId",authMiddleware, async (req, res, next) =>
       const { categoryId } = req.params;
       const {role} = req.user; 
     
-    if (!categoryId)
-      return res.status(400).json({ message: "데이터 형식이 올바르지 않습니다" });
-    // 만약 사용자의 역할이 사장님(OWNER)이 아니면 권한이 없음
-    if (role !== 'OWNER') {
-        return res.status(403).json({message: '사장님만 사용할 수 있는 API입니다'});
+    if (!categoryId){
+      throw createError('Invalid DataFormat', 'InvalidDataFormatError');
     }
+
+    if (role !== 'OWNER') {
+      throw createError('Not owner','NotOwnerError');
+  }
   
     const category = await prisma.categories.findFirst({
       where: { id: +categoryId },
     });
-    if (!category)
-      return res.status(404).json({ message: "존재하지 않는 카테고리입니다" });
+
+    if (!category){
+      throw createError('Category Not Found','CategoryNotFoundError');
+    }
+
     await prisma.categories.delete({
       where: { id: +categoryId },
     });
@@ -106,7 +122,6 @@ router.patch("/categories/:categoryId",authMiddleware, async (req, res, next) =>
     return res.status(200).json({ message: "카테고리 정보를 삭제하였습니다" });
 } catch (error) {
     return next(error);
-}
-});
+}});
 
 export default router;

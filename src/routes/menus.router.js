@@ -4,6 +4,12 @@ import authMiddleware from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
+function createError(message, name) {
+  const error = new Error(message);
+  error.name = name;
+  return error;
+}
+
 // 1. 메뉴 등록 API
 router.post("/categories/:categoryId/menus", authMiddleware, async (req, res, next) => {
 try{
@@ -11,23 +17,25 @@ try{
   const { name, description, image, price } = req.body;
   const {role} =req.user;
 
-    if (!categoryId || !name || !description || !image || !price)
-    return res.status(400).json({ message: "데이터 형식이 올바르지 않습니다" });
-    // 만약 사용자의 역할이 사장님(OWNER)이 아니면 권한이 없음
-    if (role !== 'OWNER') {
-        return res.status(403).json({message: '사장님만 사용할 수 있는 API입니다'});
-    }
+    if (!categoryId || !name || !description || !image || !price){
+      throw createError('Invalid Data Format','InvalidDataFormatError');
+  };
+
+  if (role !== 'OWNER') {
+    throw createError('Not owner','NotOwnerError');
+};
 
   const category = await prisma.categories.findFirst({
     where: { id: +categoryId },
   });
 
-  if (!category)
-    return res.status(404).json({ message: "존재하지 않는 카테고리 입니다" });
-  if (price < 0)
-    return res
-      .status(400)
-      .json({ message: "메뉴 가격은 0보다 작을수 없습니다" });
+  if (!category){
+    throw createError('Category Not Found','CategoryNotFoundError');
+  };
+
+  if (price < 0) {
+    throw createError('Invalid Menu Price','InvalidMenuPriceError');
+};
 
   await prisma.menus.create({
     data: {
@@ -49,14 +57,17 @@ try{
 router.get("/categories/:categoryId/menus", async (req, res, next) => {
 try{
     const { categoryId } = req.params;
+
     if (!categoryId)
-    return res.status(400).json({ message: "데이터 형식이 올바르지 않습니다" });
+    throw createError('Invalid Data Format','InvalidDataFormatError');
 
   const category = await prisma.categories.findFirst({
     where: { id: +categoryId },
   });
-  if (!category)
-    return res.status(404).json({ message: "존재하지 않는 카테고리입니다" });
+
+  if (!category){
+    throw createError('Category Not Found','CategoryNotFoundError');
+  }
 
   const menus = await prisma.menus.findMany({
     where: { categoryId: +categoryId },
@@ -80,14 +91,17 @@ try{
 router.get("/categories/:categoryId/menus/:menuId", async (req, res, next) => {
 try{
   const { categoryId, menuId } = req.params;
-  if (!categoryId || !menuId) 
-  return res.status(400).json({ message: "데이터 형식이 올바르지 않습니다" });
+  if (!categoryId || !menuId) {
+    throw createError('Invalid DataFormat','InvalidDataFormatError');
+    }
 
   const category = await prisma.menus.findFirst({
     where: { categoryId: +categoryId },
   });
-  if (!category)
-    return res.status(404).json({ message: "존재하지 않는 카테고리입니다" });
+  
+  if (!category){
+    throw createError('Category Not Found','CategoryNotFoundError');
+  }
 
   const menu = await prisma.menus.findFirst({
     where: {
@@ -104,6 +118,11 @@ try{
       status: true,
     },
   });
+
+  if (!menu){
+    throw createError('Menu Not Found','MenuNotFoundError');
+  }
+  
   return res.status(200).json({ data: menu });
 } catch (error) {
     return next(error);
@@ -117,30 +136,34 @@ try{
     const { name, description, price, order, status } = req.body;
     const {role} = req.user;
 
-    if (!categoryId ||!menuId ||!name ||!description ||!price ||!order ||!status)
-      return res.status(400).json({ message: "데이터 형식이 올바르지 않습니다" });
+    if (!categoryId ||!menuId ||!name ||!description ||!price ||!order ||!status){
+      throw createError('Invalid DataFormat','InvalidDataFormatError');
+    }
     
-    // 만약 사용자의 역할이 사장님(OWNER)이 아니면 권한이 없음
     if (role !== 'OWNER') {
-        return res.status(403).json({message: '사장님만 사용할 수 있는 API입니다'});
-    }  
-        const category = await prisma.menus.findFirst({
+      throw createError('Not owner','NotOwnerError');
+  }
+      const category = await prisma.menus.findFirst({
       where: { categoryId: +categoryId },
     });
-    if (!category)
-      return res.status(404).json({ message: "존재하지 않는 카테고리입니다" });
+
+    if (!category){
+      throw createError('Category Not Found','CategoryNotFoundError');
+    }
 
     const menu = await prisma.menus.findFirst({
       where: { id: +menuId },
     });
-    if (!menu)
-      return res.status(404).json({ message: "존재하지 않는 메뉴입니다" });
 
-    if (price < 0)
-      return res
-        .status(400)
-        .json({ message: "메뉴 가격은 0보다 작을수 없습니다" });
-    await prisma.menus.update({
+    if (!menu){
+      throw createError('Menu Not Found','MenuNotFoundError');
+    }
+
+    if (price < 0) {
+      throw createError('Invalid Menu Price','InvalidMenuPriceError');
+}
+
+      await prisma.menus.update({
       where: { id: +menuId, categoryId: +categoryId },
       data: {
         name,
@@ -163,26 +186,31 @@ try {
     const { categoryId, menuId } = req.params;
     const {role} = req.user;
 
-    if (!categoryId || !menuId)
-      return res.status(400).json({ message: "데이터 형식이 올바르지 않습니다" });
-
-    // 만약 사용자의 역할이 사장님(OWNER)이 아니면 권한이 없음
-    if (role !== 'OWNER') {
-        return res.status(403).json({message: '사장님만 사용할 수 있는 API입니다'});
+    if (!categoryId || !menuId){
+      throw createError('Invalid DataFormat','InvalidDataFormatError');
     }
+
+    if (role !== 'OWNER') {
+      throw createError('Not owner','NotOwnerError');
+  }
 
     const category = await prisma.menus.findFirst({
       where: { categoryId: +categoryId },
     });
-    if (!category)
-      return res.status(404).json({ message: "존재하지 않는 카테고리입니다" });
+    
+    if (!category){
+      throw createError('Category Not Found','CategoryNotFoundError');
+    }
 
     const menu = await prisma.menus.findFirst({
       where: { id: +menuId },
     });
-    if (!menu)
-      return res.status(404).json({ message: "존재하지 않는 메뉴입니다" });
-    await prisma.menus.delete({
+
+    if (!menu) {
+      throw createError('Menu Not Found','MenuNotFoundError');
+    }
+    
+      await prisma.menus.delete({
       where: { id: +menuId, categoryId: +categoryId },
     });
     return res.status(200).json({ message: "메뉴를 삭제하였습니다" });
