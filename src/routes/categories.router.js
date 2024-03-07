@@ -16,7 +16,6 @@ router.post('/categories', authMiddleware, async (req, res, next) => {
     const {name} = req.body;
     const {role} = req.user; // 사용자의 역할 정보
 
-
     if (!name) {
       throw createError('Invalid Data Format', 'InvalidDataFormatError');
   }
