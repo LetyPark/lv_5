@@ -1,14 +1,9 @@
 import express from "express";
 import {prisma} from '../utils/prisma/index.js'
 import authMiddleware from "../middlewares/auth.middleware.js";
-
+import { createCustomError } from "../utils/errorUtils.js";
 const router = express.Router();
 
-function createError(message, name) {
-  const error = new Error(message);
-  error.name = name;
-  return error;
-}
 
 // 1. 카테고리 등록 API
 router.post('/categories', authMiddleware, async (req, res, next) => {
@@ -17,11 +12,11 @@ router.post('/categories', authMiddleware, async (req, res, next) => {
     const {role} = req.user; // 사용자의 역할 정보
 
     if (!name) {
-      throw createError('Invalid Data Format', 'InvalidDataFormatError');
+      throw createCustomError('Invalid Data Format', 'InvalidDataFormatError');
   }
 
   if (role !== 'OWNER') {
-    throw createError('Not owner', 'NotOwnerError');
+    throw createCustomError('Not Owner', 'NotOwnerError');
 }
 
     const categoryCount = await prisma.categories.count();
@@ -63,11 +58,11 @@ router.patch("/categories/:categoryId",authMiddleware, async (req, res, next) =>
       const {role} = req.user;
       
     if (!categoryId || !name || !order) {
-      throw createError('Invalid DataFormat', 'InvalidDataFormatError');
+      throw createCustomError('Invalid Data Format', 'InvalidDataFormatError');
     }
 
     if (role !== 'OWNER') {
-      throw createError('Not owner', 'NotOwnerError');
+      throw createCustomError('Not Owner', 'NotOwnerError');
   }
 
     const category = await prisma.categories.findUnique({
@@ -75,7 +70,7 @@ router.patch("/categories/:categoryId",authMiddleware, async (req, res, next) =>
     });
 
     if (!category){
-      throw createError('Category Not Found', 'CategoryNotFoundError');
+      throw createCustomError('Category Not Found', 'CategoryNotFoundError');
     }
       
     await prisma.categories.update({
@@ -99,11 +94,11 @@ router.patch("/categories/:categoryId",authMiddleware, async (req, res, next) =>
       const {role} = req.user; 
     
     if (!categoryId){
-      throw createError('Invalid DataFormat', 'InvalidDataFormatError');
+      throw createCustomError('Invalid Data Format', 'InvalidDataFormatError');
     }
 
     if (role !== 'OWNER') {
-      throw createError('Not owner','NotOwnerError');
+      throw createCustomError('Not Owner', 'NotOwnerError');
   }
   
     const category = await prisma.categories.findFirst({
@@ -111,7 +106,7 @@ router.patch("/categories/:categoryId",authMiddleware, async (req, res, next) =>
     });
 
     if (!category){
-      throw createError('Category Not Found','CategoryNotFoundError');
+      throw createCustomError('Category Not Found', 'CategoryNotFoundError');
     }
 
     await prisma.categories.delete({

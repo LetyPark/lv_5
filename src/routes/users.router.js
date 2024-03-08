@@ -1,6 +1,7 @@
 import express from "express";
 import {prisma} from '../utils/prisma/index.js'
 import Joi from 'joi';
+import { createCustomError } from "../utils/errorUtils.js";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
@@ -17,12 +18,6 @@ const signUpSchema = Joi.object({
 })
 
 
-function createError(message, name) {
-    const error = new Error(message);
-    error.name = name;
-    return error;
-  }
-
 // 1. 회원가입 API
 router.post('/sign-up', async(req, res, next)=>{
     try {
@@ -34,9 +29,9 @@ router.post('/sign-up', async(req, res, next)=>{
             const passwordError = error.details.find(d => d.context.key === 'password');
 
             if (nicknameError) {
-                throw createError('Invalid Nickname Format','InvalidNicknameFormatError');
+                throw new Error('InvalidNicknameFormatError');
             } else if (passwordError) {
-                throw createError('Invalid Password Format','InvalidPasswordFormatError');
+                throw new Error('InvalidPasswordFormatError');
             } 
         }
 
@@ -44,14 +39,14 @@ router.post('/sign-up', async(req, res, next)=>{
         const { nickname, password, userType } = value;
     
     if(!nickname || !password) {
-        throw createError('Invalid Data Format', 'InvalidDataFormatError');
+        throw createCustomError('Invalid Data Format', 'InvalidDataFormatError');
     }
     const userNickname = await prisma.users.findFirst({
         where : {nickname}
     });
 
     if(userNickname){
-        throw createError('Duplicated Nickname', 'DuplicatedNicknameError');
+        throw createCustomError('Duplicated Nickname', 'DuplicatedNicknameError');
     }
 
 const hashedPassword =  await bcrypt.hash(password, 10);
@@ -79,7 +74,7 @@ try{
     const {nickname, password} = req.body;
 
     if(!nickname || !password) {
-        throw createError('Invalid Data Format', 'InvalidDataFormatError');
+        throw createCustomError('Invalid Data Format', 'InvalidDataFormatError');
     }
 
     const user = await prisma.users.findFirst({
@@ -87,12 +82,12 @@ try{
     });
 
     if(!user) {
-    throw createError('Not Found Nickname', 'NotFoundNicknameError');
+        throw createCustomError('Not Found Nickname', 'NotFoundNicknameError');
     }
 
 // 비정상적인 비밀번호로 시도할 경우 
     if (!(await bcrypt.compare(password, user.password))){
-        throw createError('Invalid Password', 'InvalidPasswordError');
+        throw createCustomError('Invalid Password', 'InvalidPasswordError');
     }
 
     // 로그인에 성공한다면 jwt 토큰 발급
@@ -107,9 +102,9 @@ try{
     res.cookie('authorization', `Bearer ${accessToken}`);
     res.cookie('refreshToken', `Bearer ${refreshToken}`);
 
-     return res.status(200).json({ message: '로그인에 성공하였습니다' });
+    return res.status(200).json({ message: '로그인에 성공하였습니다' });
     } catch (error) {
-      return next(error);
+    next(error);
 }
 });
 

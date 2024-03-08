@@ -1,14 +1,9 @@
 import express from "express";
 import {prisma} from '../utils/prisma/index.js'
+import { createCustomError } from "../utils/errorUtils.js";
 import authMiddleware from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
-
-function createError(message, name) {
-  const error = new Error(message);
-  error.name = name;
-  return error;
-}
 
 // 1. 메뉴 등록 API
 router.post("/categories/:categoryId/menus", authMiddleware, async (req, res, next) => {
@@ -18,11 +13,11 @@ try{
   const {role} =req.user;
 
     if (!categoryId || !name || !description || !image || !price){
-      throw createError('Invalid Data Format','InvalidDataFormatError');
+      throw createCustomError('Invalid Data Format', 'InvalidDataFormatError');
   };
 
   if (role !== 'OWNER') {
-    throw createError('Not owner','NotOwnerError');
+    throw createCustomError('Not Owner','NotOwnerError');
 };
 
   const category = await prisma.categories.findFirst({
@@ -30,11 +25,11 @@ try{
   });
 
   if (!category){
-    throw createError('Category Not Found','CategoryNotFoundError');
+    throw createCustomError('Category Not Found','CategoryNotFoundError');
   };
 
   if (price < 0) {
-    throw createError('Invalid Menu Price','InvalidMenuPriceError');
+    throw createCustomError('Invalid Menu Price','InvalidMenuPriceError');
 };
 
   await prisma.menus.create({
@@ -59,14 +54,14 @@ try{
     const { categoryId } = req.params;
 
     if (!categoryId)
-    throw createError('Invalid Data Format','InvalidDataFormatError');
+    throw new Error('InvalidDataFormatError');
 
   const category = await prisma.categories.findFirst({
     where: { id: +categoryId },
   });
 
   if (!category){
-    throw createError('Category Not Found','CategoryNotFoundError');
+    throw createCustomError('Category Not Found', 'CategoryNotFoundError');
   }
 
   const menus = await prisma.menus.findMany({
@@ -92,7 +87,7 @@ router.get("/categories/:categoryId/menus/:menuId", async (req, res, next) => {
 try{
   const { categoryId, menuId } = req.params;
   if (!categoryId || !menuId) {
-    throw createError('Invalid DataFormat','InvalidDataFormatError');
+    throw createCustomError('Invalid Data Format', 'InvalidDataFormatError');
     }
 
   const category = await prisma.menus.findFirst({
@@ -100,7 +95,7 @@ try{
   });
   
   if (!category){
-    throw createError('Category Not Found','CategoryNotFoundError');
+    throw createCustomError('Category Not Found', 'CategoryNotFoundError');
   }
 
   const menu = await prisma.menus.findFirst({
@@ -120,7 +115,7 @@ try{
   });
 
   if (!menu){
-    throw createError('Menu Not Found','MenuNotFoundError');
+    throw createCustomError('Menu Not Found', 'MenuNotFoundError');
   }
   
   return res.status(200).json({ data: menu });
@@ -137,18 +132,18 @@ try{
     const {role} = req.user;
 
     if (!categoryId ||!menuId ||!name ||!description ||!price ||!order ||!status){
-      throw createError('Invalid DataFormat','InvalidDataFormatError');
+      throw createCustomError('Invalid Data Format', 'InvalidDataFormatError');
     }
     
     if (role !== 'OWNER') {
-      throw createError('Not owner','NotOwnerError');
+      throw createCustomError('Not Owner','NotOwnerError');
   }
       const category = await prisma.menus.findFirst({
       where: { categoryId: +categoryId },
     });
 
     if (!category){
-      throw createError('Category Not Found','CategoryNotFoundError');
+      throw createCustomError('Category Not Found','CategoryNotFoundError');
     }
 
     const menu = await prisma.menus.findFirst({
@@ -156,11 +151,11 @@ try{
     });
 
     if (!menu){
-      throw createError('Menu Not Found','MenuNotFoundError');
+      throw createCustomError('Menu Not Found', 'MenuNotFoundError');
     }
 
     if (price < 0) {
-      throw createError('Invalid Menu Price','InvalidMenuPriceError');
+      throw createCustomError('Invalid Menu Price', 'InvalidMenuPriceError');
 }
 
       await prisma.menus.update({
@@ -187,11 +182,11 @@ try {
     const {role} = req.user;
 
     if (!categoryId || !menuId){
-      throw createError('Invalid DataFormat','InvalidDataFormatError');
+      throw createCustomError('Invalid Data Format', 'InvalidDataFormatError');
     }
 
     if (role !== 'OWNER') {
-      throw createError('Not owner','NotOwnerError');
+      throw createCustomError('Not Owner', 'NotOwnerError');
   }
 
     const category = await prisma.menus.findFirst({
@@ -199,7 +194,7 @@ try {
     });
     
     if (!category){
-      throw createError('Category Not Found','CategoryNotFoundError');
+      throw createCustomError('Category Not Found', 'CategoryNotFoundError');
     }
 
     const menu = await prisma.menus.findFirst({
@@ -207,7 +202,7 @@ try {
     });
 
     if (!menu) {
-      throw createError('Menu Not Found','MenuNotFoundError');
+      throw createCustomError('Menu Not Found', 'MenuNotFoundError');
     }
     
       await prisma.menus.delete({
