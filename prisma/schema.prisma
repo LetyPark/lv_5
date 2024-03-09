@@ -50,6 +50,8 @@ model Menus{
   categoryId  Int    @map("categoryId")
   category    Categories @relation(fields: [categoryId], references: [id])
 
+  customerOrder  CustomerOrders[]
+
   @@map("Menus")
 }
 
@@ -57,3 +59,21 @@ enum Status{
   FOR_SALE
   SOLD_OUT
 }
+
+model CustomerOrders{
+ id          Int    @id @default(autoincrement()) @map("id") 
+ menuId      Int    @map("menuId")
+ orderType   OrderType @default(PENDING) @map("ordertype")
+ quantity    Int @map("quantity")
+
+ menu        Menus @relation(fields : [menuId], references: [id])
+
+@@map("CutomerOrders")
+}
+
+enum OrderType{
+PENDING
+ACCEPTED
+CANCEL
+}
+

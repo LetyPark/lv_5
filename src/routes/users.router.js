@@ -1,7 +1,7 @@
 import express from "express";
 import {prisma} from '../utils/prisma/index.js'
+import CustomError from "../utils/customError.js";
 import Joi from 'joi';
-import { createCustomError } from "../utils/errorUtils.js";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
@@ -29,9 +29,9 @@ router.post('/sign-up', async(req, res, next)=>{
             const passwordError = error.details.find(d => d.context.key === 'password');
 
             if (nicknameError) {
-                throw new Error('InvalidNicknameFormatError');
+                throw new CustomError('Invalid Data Format', 400); 
             } else if (passwordError) {
-                throw new Error('InvalidPasswordFormatError');
+                throw new CustomError('Invalid Data Format', 400); 
             } 
         }
 
@@ -39,14 +39,14 @@ router.post('/sign-up', async(req, res, next)=>{
         const { nickname, password, userType } = value;
     
     if(!nickname || !password) {
-        throw createCustomError('Invalid Data Format', 'InvalidDataFormatError');
+        throw new CustomError('Invalid Data Format', 400); 
     }
     const userNickname = await prisma.users.findFirst({
         where : {nickname}
     });
 
     if(userNickname){
-        throw createCustomError('Duplicated Nickname', 'DuplicatedNicknameError');
+        throw new CustomError('Duplicated Nickname', 409); 
     }
 
 const hashedPassword =  await bcrypt.hash(password, 10);
@@ -59,7 +59,6 @@ await prisma.users.create({
 });
     return res.status(201).json({message : '회원가입이 완료되었습니다'})
 } catch (error) {
-    // 사용자 인증 미들웨어로 에러 전달
     return next(error);
 }
 });
@@ -74,7 +73,7 @@ try{
     const {nickname, password} = req.body;
 
     if(!nickname || !password) {
-        throw createCustomError('Invalid Data Format', 'InvalidDataFormatError');
+        throw new CustomError('Invalid Data Format', 400); 
     }
 
     const user = await prisma.users.findFirst({
@@ -82,12 +81,12 @@ try{
     });
 
     if(!user) {
-        throw createCustomError('Not Found Nickname', 'NotFoundNicknameError');
+        throw new CustomError('Not Found Nickname', 401); 
     }
 
 // 비정상적인 비밀번호로 시도할 경우 
     if (!(await bcrypt.compare(password, user.password))){
-        throw createCustomError('Invalid Password', 'InvalidPasswordError');
+        throw new CustomError('Invalid Password', 401); 
     }
 
     // 로그인에 성공한다면 jwt 토큰 발급
