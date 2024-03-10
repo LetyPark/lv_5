@@ -49,7 +49,7 @@ router.get('/categories', async (req, res, next) => {
 });
 
 // 3. 카테고리 정보 변경 API
-router.patch("/categories/:categoryId", authMiddleware, async (req, res, next) => {
+router.patch('/categories/:categoryId', authMiddleware, async (req, res, next) => {
     try {
         const { categoryId } = req.params;
         const { name, order } = req.body;
@@ -85,7 +85,7 @@ router.patch("/categories/:categoryId", authMiddleware, async (req, res, next) =
 });
 
 // 4. 카테고리 삭제 API
-router.delete("/categories/:categoryId", authMiddleware, async (req, res, next) => {
+router.delete('/categories/:categoryId', authMiddleware, async (req, res, next) => {
     try {
         const { categoryId } = req.params;
         const { role } = req.user;

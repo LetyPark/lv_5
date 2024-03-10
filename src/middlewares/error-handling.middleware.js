@@ -9,6 +9,7 @@ const errorMessages = {
     'Not Owner': '사장님만 사용할 수 있는 API입니다' ,
     'Not Customer' : '소비자만 사용할 수 있는 API입니다' ,
     'Category Not Found': '존재하지 않는 카테고리입니다' ,
+    'Order Not Found' : '존재하지 않는 주문 내역입니다',
     'Invalid Menu Price': '메뉴 가격은 0보다 작을 수 없습니다' ,
     'Menu Not Found':  '존재하지 않는 메뉴입니다',
     'Token Expired': '토큰이 만료되었습니다',

@@ -15,11 +15,11 @@ router.post(
       const { role } = req.user;
 
       if (!categoryId || !name || !description || !image || !price) {
-        throw new CustomError("Invalid Data Format", 400);
+        throw new CustomError('Invalid Data Format', 400);
       }
 
-      if (role !== "OWNER") {
-        throw new CustomError("Not Owner", 403);
+      if (role !== 'OWNER') {
+        throw new CustomError('Not Owner', 403);
       }
 
       const category = await prisma.categories.findFirst({
@@ -27,11 +27,11 @@ router.post(
       });
 
       if (!category) {
-        throw new CustomError("Category Not Found", 404);
+        throw new CustomError('Category Not Found', 404);
       }
 
       if (price < 0) {
-        throw new CustomError("Invalid Menu Price", 400);
+        throw new CustomError('Invalid Menu Price', 400);
       }
 
       await prisma.menus.create({
@@ -52,18 +52,18 @@ router.post(
 );
 
 // 2. 카테고리별 메뉴 조회 API
-router.get("/categories/:categoryId/menus", async (req, res, next) => {
+router.get('/categories/:categoryId/menus', async (req, res, next) => {
   try {
     const { categoryId } = req.params;
 
-    if (!categoryId) throw new CustomError("Invalid Data Format", 400);
+    if (!categoryId) throw new CustomError('Invalid Data Format', 400);
 
     const category = await prisma.categories.findFirst({
       where: { id: +categoryId },
     });
 
     if (!category) {
-      throw new CustomError("Category Not Found", 404);
+      throw new CustomError('Category Not Found', 404);
     }
 
     const menus = await prisma.menus.findMany({
@@ -85,11 +85,11 @@ router.get("/categories/:categoryId/menus", async (req, res, next) => {
 });
 
 // 3. 메뉴 상세 조회 api
-router.get("/categories/:categoryId/menus/:menuId", async (req, res, next) => {
+router.get('/categories/:categoryId/menus/:menuId', async (req, res, next) => {
   try {
     const { categoryId, menuId } = req.params;
     if (!categoryId || !menuId) {
-      throw new CustomError("Invalid Data Format", 400);
+      throw new CustomError('Invalid Data Format', 400);
     }
 
     const category = await prisma.menus.findFirst({
@@ -97,7 +97,7 @@ router.get("/categories/:categoryId/menus/:menuId", async (req, res, next) => {
     });
 
     if (!category) {
-      throw new CustomError("Category Not Found", 404);
+      throw new CustomError('Category Not Found', 404);
     }
 
     const menu = await prisma.menus.findFirst({
@@ -117,7 +117,7 @@ router.get("/categories/:categoryId/menus/:menuId", async (req, res, next) => {
     });
 
     if (!menu) {
-      throw new CustomError("Menu Not Found", 404);
+      throw new CustomError('Menu Not Found', 404);
     }
 
     return res.status(200).json({ data: menu });
@@ -128,7 +128,7 @@ router.get("/categories/:categoryId/menus/:menuId", async (req, res, next) => {
 
 // 4. 메뉴 수정 API
 router.patch(
-  "/categories/:categoryId/menus/:menuId",
+  '/categories/:categoryId/menus/:menuId',
   authMiddleware,
   async (req, res, next) => {
     try {
@@ -145,18 +145,18 @@ router.patch(
         !order ||
         !status
       ) {
-        throw new CustomError("Invalid Data Format", 400);
+        throw new CustomError('Invalid Data Format', 400);
       }
 
-      if (role !== "OWNER") {
-        throw new CustomError("Not Owner", 403);
+      if (role !== 'OWNER') {
+        throw new CustomError('Not Owner', 403);
       }
       const category = await prisma.menus.findFirst({
         where: { categoryId: +categoryId },
       });
 
       if (!category) {
-        throw new CustomError("Category Not Found", 404);
+        throw new CustomError('Category Not Found', 404);
       }
 
       const menu = await prisma.menus.findFirst({
@@ -164,11 +164,11 @@ router.patch(
       });
 
       if (!menu) {
-        throw new CustomError("Menu Not Found", 404);
+        throw new CustomError('Menu Not Found', 404);
       }
 
       if (price < 0) {
-        throw new CustomError("Invalid Menu Price", 400);
+        throw new CustomError('Invalid Menu Price', 400);
       }
 
       await prisma.menus.update({
@@ -181,7 +181,7 @@ router.patch(
           status,
         },
       });
-      return res.status(200).json({ message: "메뉴를 수정하였습니다" });
+      return res.status(200).json({ message: '메뉴를 수정하였습니다' });
     } catch (error) {
       return next(error);
     }
@@ -190,7 +190,7 @@ router.patch(
 
 // 5. 메뉴 삭제 API
 router.delete(
-  "/categories/:categoryId/menus/:menuId",
+  '/categories/:categoryId/menus/:menuId',
   authMiddleware,
   async (req, res, next) => {
     try {
@@ -198,11 +198,11 @@ router.delete(
       const { role } = req.user;
 
       if (!categoryId || !menuId) {
-        throw new CustomError("Invalid Data Format", 400);
+        throw new CustomError('Invalid Data Format', 400);
       }
 
-      if (role !== "OWNER") {
-        throw new CustomError("Not Owner", 403);
+      if (role !== 'OWNER') {
+        throw new CustomError('Not Owner', 403);
       }
 
       const category = await prisma.menus.findFirst({
@@ -210,7 +210,7 @@ router.delete(
       });
 
       if (!category) {
-        throw new CustomError("Category Not Found", 404);
+        throw new CustomError('Category Not Found', 404);
       }
 
       const menu = await prisma.menus.findFirst({
@@ -218,17 +218,19 @@ router.delete(
       });
 
       if (!menu) {
-        throw new CustomError("Menu Not Found", 404);
+        throw new CustomError('Menu Not Found', 404);
       }
 
       await prisma.menus.delete({
         where: { id: +menuId, categoryId: +categoryId },
       });
-      return res.status(200).json({ message: "메뉴를 삭제하였습니다" });
+      return res.status(200).json({ message: '메뉴를 삭제하였습니다' });
     } catch (error) {
       return next(error);
     }
   }
 );
+
+
 
 export default router;

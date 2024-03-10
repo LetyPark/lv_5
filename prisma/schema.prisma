@@ -20,6 +20,8 @@ model Users {
   password  String   @map("password")
   userType  UserTypes   @default(CUSTOMER) @map("userType")
 
+  customerOrder    CustomerOrders[]
+
 
   @@map("Users")
 }
@@ -63,12 +65,20 @@ enum Status{
 model CustomerOrders{
  id          Int    @id @default(autoincrement()) @map("id") 
  menuId      Int    @map("menuId")
+ userId      Int    @map("userId")
  orderType   OrderType @default(PENDING) @map("ordertype")
  quantity    Int @map("quantity")
+ createdAt   DateTime   @default(now()) @map("createdAt")
 
+ user        Users     @relation(fields: [userId], references: [id])
  menu        Menus @relation(fields : [menuId], references: [id])
 
-@@map("CutomerOrders")
+  // totalPrice 필드는 실제 데이터베이스에 저장되지 않고 Prisma Client를 사용하여 계산됩니다.
+  // Prisma Client에서 totalPrice를 가져올 때 필요한 경우 계산합니다.
+  // 따라서 @map 어노테이션을 사용하지 않습니다.
+  totalPrice  Int
+
+@@map("CustomerOrders")
 }
 
 enum OrderType{
