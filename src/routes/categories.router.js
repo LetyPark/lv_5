@@ -36,6 +36,9 @@ router.post('/categories', authMiddleware, async (req, res, next) => {
 router.get('/categories', async (req, res, next) => {
     try {
         const categories = await prisma.categories.findMany({
+            where: {
+                deletedAt: null // deletedAt이 null인 경우만 조회
+            },
             select: {
                 id: true,
                 name: true,
@@ -70,7 +73,10 @@ router.patch('/categories/:categoryId', authMiddleware, async (req, res, next) =
         if (!category) {
             throw new CustomError('Category Not Found', 404); 
         }
-
+        // 카테고리가 소프트 삭제된 경우 수정을 허용하지 않음
+        if (category.deletedAt !== null) {
+            throw new CustomError('Category Not Found', 404);
+        }
         await prisma.categories.update({
             where: { id: +categoryId },
             data: {
@@ -106,9 +112,15 @@ router.delete('/categories/:categoryId', authMiddleware, async (req, res, next) 
             throw new CustomError('Category Not Found', 404); 
         }
 
-        await prisma.categories.delete({
+           // 소프트 삭제로 변경된 부분
+        const deletedCategory = await prisma.categories.update({
             where: { id: +categoryId },
+            data: { deletedAt: new Date() } // 현재 시간을 deletedAt 필드에 설정
         });
+
+        if (!deletedCategory) {
+            throw new CustomError('Category Not Found', 404); 
+        }
 
         return res.status(200).json({ message: "카테고리 정보를 삭제하였습니다" });
     } catch (error) {

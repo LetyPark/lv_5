@@ -35,6 +35,7 @@ model Categories {
   id     Int    @id @default(autoincrement()) @map("id")
   name   String @map("name")
   order  Int    @map("order")
+  deletedAt     DateTime?      @map("deletedAt") // 소프트 삭제를 위한 deletedAt 필드
 
   menus Menus[]
   
@@ -49,6 +50,7 @@ model Menus{
   price       Int    @map("price")
   order       Int    @map("order")
   status      Status @default(FOR_SALE) @map("status")
+  deletedAt     DateTime?      @map("deletedAt") // 소프트 삭제를 위한 deletedAt 필드
   categoryId  Int    @map("categoryId")
   category    Categories @relation(fields: [categoryId], references: [id])
 
@@ -69,6 +71,7 @@ model CustomerOrders{
  orderType   OrderType @default(PENDING) @map("ordertype")
  quantity    Int @map("quantity")
  createdAt   DateTime   @default(now()) @map("createdAt")
+ deletedAt     DateTime?      @map("deletedAt") // 소프트 삭제를 위한 deletedAt 필드
 
  user        Users     @relation(fields: [userId], references: [id])
  menu        Menus @relation(fields : [menuId], references: [id])
