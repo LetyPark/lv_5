@@ -59,7 +59,7 @@ router.get('/categories/:categoryId/menus', async (req, res, next) => {
     if (!categoryId) throw new CustomError('Invalid Data Format', 400);
 
     const category = await prisma.categories.findFirst({
-      where: { id: +categoryId },
+      where: { id: +categoryId, deletedAt: null },
     });
 
     if (!category) {
@@ -67,7 +67,7 @@ router.get('/categories/:categoryId/menus', async (req, res, next) => {
     }
 
     const menus = await prisma.menus.findMany({
-      where: { categoryId: +categoryId },
+      where: { categoryId: +categoryId, deletedAt: null },
       select: {
         id: true,
         name: true,
@@ -93,7 +93,10 @@ router.get('/categories/:categoryId/menus/:menuId', async (req, res, next) => {
     }
 
     const category = await prisma.menus.findFirst({
-      where: { categoryId: +categoryId },
+      where: { 
+        categoryId: +categoryId,
+        deletedAt : null
+      },
     });
 
     if (!category) {
@@ -104,6 +107,7 @@ router.get('/categories/:categoryId/menus/:menuId', async (req, res, next) => {
       where: {
         categoryId: +categoryId,
         id: +menuId,
+        deletedAt: null 
       },
       select: {
         id: true,
@@ -152,15 +156,15 @@ router.patch(
         throw new CustomError('Not Owner', 403);
       }
       const category = await prisma.menus.findFirst({
-        where: { categoryId: +categoryId },
+        where: { categoryId: +categoryId , deletedAt : null },
       });
-
+      
       if (!category) {
         throw new CustomError('Category Not Found', 404);
       }
 
       const menu = await prisma.menus.findFirst({
-        where: { id: +menuId },
+        where: { id: +menuId, categoryId: +categoryId , deletedAt : null },
       });
 
       if (!menu) {
@@ -220,9 +224,10 @@ router.delete(
       if (!menu) {
         throw new CustomError('Menu Not Found', 404);
       }
-
-      await prisma.menus.delete({
+     // 소프트 삭제로 변경
+      await prisma.menus.update({
         where: { id: +menuId, categoryId: +categoryId },
+        data : {deletedAt : new Date()}
       });
       return res.status(200).json({ message: '메뉴를 삭제하였습니다' });
     } catch (error) {
