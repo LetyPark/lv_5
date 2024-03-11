@@ -1,21 +1,11 @@
 import express from "express";
 import {prisma} from '../utils/prisma/index.js'
 import CustomError from "../utils/customError.js";
-import Joi from 'joi';
+import signUpSchema from "../utils/schemas/signupSchema.js";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
 const router = express.Router();
-
-const signUpSchema = Joi.object({
-    nickname : Joi.string().min(3).max(15).alphanum().required(), // alphanum(): 알파벳과 숫자만 허용
-    password: Joi.string()
-    .min(8)
-    .max(20)
-    .pattern(new RegExp(`^(?!.*\\b${Joi.ref('nickname')}\\b).{8,20}$`))
-    .required(),
-    userType: Joi.string().valid('CUSTOMER', 'OWNER').default('CUSTOMER') // CUSTOMER' 또는 'OWNER' 중 하나여야 함
-})
 
 
 // 1. 회원가입 API
@@ -25,15 +15,8 @@ router.post('/sign-up', async(req, res, next)=>{
         
         if (error) {
             // 닉네임과 비밀번호에 대한 오류 메시지 확인
-            const nicknameError = error.details.find(d => d.context.key === 'nickname');
-            const passwordError = error.details.find(d => d.context.key === 'password');
-
-            if (nicknameError) {
-                throw new CustomError('Invalid Data Format', 400); 
-            } else if (passwordError) {
-                throw new CustomError('Invalid Data Format', 400); 
-            } 
-        }
+            throw new CustomError('Invalid Data Format', 400); 
+}
 
         // 유효성 검사를 통과한 데이터를 추출하여 사용
         const { nickname, password, userType } = value;
